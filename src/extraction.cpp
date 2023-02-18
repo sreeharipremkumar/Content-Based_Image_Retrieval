@@ -1,3 +1,11 @@
+/*
+
+	Sreehari Premkumar, MS Robotics Northeastern University
+
+	Code that does the feature extraction
+
+*/
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -68,10 +76,11 @@ int main(int argc, char *argv[])
 
 			if (num == 1)
 			{
-				int h = Baseline(buffer, feature_vec);
+				int h = Baseline(buffer, feature_vec); //calculating baseline features
 				if (h == 0)
 				{
 					int r = append_image_data_csv(Baseline_path, dp->d_name, feature_vec, first_run);
+					//adding the features to the csv file
 					if (r == 0)
 					{
 						first_run = false;
@@ -101,12 +110,13 @@ int main(int argc, char *argv[])
 				// Parameters
 
 				cv::Mat hist;
-				int h = Histogram(buffer, hist, RGB, bin);
+				int h = Histogram(buffer, hist, RGB, bin);//calculating histogram color features
 				if (h == 0)
 				{
-					printf("%f\n", hist.at<float>(0, 0));
-					int t = Hist2Vec(feature_vec, hist, RGB);
+					//printf("%f\n", hist.at<float>(0, 0)); //for debugging
+					int t = Hist2Vec(feature_vec, hist, RGB); //converting histogram to feature vector
 					int r = append_image_data_csv(Histogram_path[RGB], dp->d_name, feature_vec, first_run);
+					//adding feature vector to csv file
 					if (r == 0)
 					{
 						first_run = false;
@@ -131,17 +141,19 @@ int main(int argc, char *argv[])
 				cv::Mat hist_c, hist;
 
 				int h = MultiHist(buffer, hist_c, center_square_break, hist, RGB, bin);
+				//calculating multihistogram
 				if (h == 0)
 				{
-					int t1 = Hist2Vec(feature_vec, hist, RGB);
+					int t1 = Hist2Vec(feature_vec, hist, RGB);// converting histogram of main image to feature vector
 					int r1 = append_image_data_csv(Multi_histo_path, dp->d_name, feature_vec, first_run);
 					if (r1 == 0)
 					{
 						first_run = false;
 					}
 
-					int t2 = Hist2Vec(feature_vec2, hist_c, RGB);
+					int t2 = Hist2Vec(feature_vec2, hist_c, RGB);// converting histogra of center focused image to feature vector
 					int r2 = append_image_data_csv(Multi_histo_path, dp->d_name, feature_vec2, false);
+					//adding to csv file
 				}
 			}
 			else if (num == 4)
@@ -152,18 +164,18 @@ int main(int argc, char *argv[])
 
 				cv::Mat hist_c, hist;
 
-				int h = TextureColor(buffer, hist_c, hist, RGB, bin);
+				int h = TextureColor(buffer, hist_c, hist, RGB, bin);// calculating texture and color features as histogram
 				if (h == 0)
 				{
-					int t1 = Hist2Vec(feature_vec, hist, RGB);
-					int r1 = append_image_data_csv(TextureColor_histo_path, dp->d_name, feature_vec, first_run);
+					int t1 = Hist2Vec(feature_vec, hist, RGB);//converting hist to feature vector
+					int r1 = append_image_data_csv(TextureColor_histo_path, dp->d_name, feature_vec, first_run);//adding to csv
 					if (r1 == 0)
 					{
 						first_run = false;
 					}
 
-					int t2 = Hist2Vec(feature_vec2, hist_c, RGB);
-					int r2 = append_image_data_csv(TextureColor_histo_path, dp->d_name, feature_vec2, false);
+					int t2 = Hist2Vec(feature_vec2, hist_c, RGB);//converting hist to feature vector
+					int r2 = append_image_data_csv(TextureColor_histo_path, dp->d_name, feature_vec2, false);//adding to csv
 				}
 			}
 			else if (num == 5)
@@ -175,6 +187,7 @@ int main(int argc, char *argv[])
 				cv::Mat hist_c, hist;
 
 				int h = LawsHist(buffer, hist_c, hist,first_run,true,feature_vec,feature_vec2);
+				// Everything for Laws filter and histogram is calculated and added to csv within the Laws hist function
 			}
 		}
 	}

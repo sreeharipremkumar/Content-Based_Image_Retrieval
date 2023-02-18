@@ -1,3 +1,12 @@
+/*
+
+    Sreehari Premkumar, MS Robotics Northeastern University
+
+    Code containing different functions required by the extraction.cpp
+
+*/
+
+
 #include <cstdio>
 #include <iostream>
 #include <vector>
@@ -6,18 +15,6 @@
 #include <opencv2/opencv.hpp>
 #include "../include/csv_util.h"
 
-// using namespace std;
-// template <typename S>
-// ostream& operator<<(ostream& os,
-//                     const vector<S>& vector)
-// {
-//     // Printing all the elements
-//     // using <<
-//     for (auto element : vector) {
-//         os << element << " ";
-//     }
-//     return os;
-// }
 
 int Baseline(char file[256], std::vector<float> &vec_ptr)
 {
@@ -84,7 +81,7 @@ int Histogram(char file[256], cv::Mat &hist, int RGB, int bin)
 
     int divisor = 256 / bin;
 
-    if (RGB == 0)
+    if (RGB == 0) // making different size hist variable to accomodate for RGB, RG, GB, RB hist, and single channel hist grayscal
     {
         int dim[3] = {bin, bin, bin};
         hist = cv::Mat::zeros(3, dim, CV_32F);
@@ -107,32 +104,32 @@ int Histogram(char file[256], cv::Mat &hist, int RGB, int bin)
 
         for (int j = 0; j < image.cols; j++)
         {
-            if (RGB == 0)
+            if (RGB == 0) // RGB
             {
                 hist_r = ptr[j][2] / divisor;
                 hist_g = ptr[j][1] / divisor;
                 hist_b = ptr[j][0] / divisor;
                 hist.at<float>(hist_r, hist_g, hist_b)++;
             }
-            else if (RGB == 1)
+            else if (RGB == 1)// RG
             {
                 hist_r = ptr[j][2] / divisor;
                 hist_g = ptr[j][1] / divisor;
                 hist.at<float>(hist_r, hist_g)++;
             }
-            else if (RGB == 2)
+            else if (RGB == 2) //RB
             {
                 hist_r = ptr[j][2] / divisor;
                 hist_b = ptr[j][0] / divisor;
                 hist.at<float>(hist_r, hist_b)++;
             }
-            else if (RGB == 3)
+            else if (RGB == 3) //GB
             {
                 hist_g = ptr[j][1] / divisor;
                 hist_b = ptr[j][0] / divisor;
                 hist.at<float>(hist_g, hist_b)++;
             }
-            else if (RGB == 4)
+            else if (RGB == 4) //Grayscale / single channel
             {
                 hist_r = ptr[j][0] / divisor;
                 hist.at<float>(hist_g)++;
@@ -153,6 +150,7 @@ int MultiHist(char file[256], cv::Mat &hist_c, float center_break, cv::Mat &hist
         return 1;
     }
 
+    // finding the center of the image to make a second image which is of different size but centered to the original
     int center_x = image.cols / 2;
     int center_y = image.rows / 2;
     int img_size_x = center_break * image.cols;
@@ -167,7 +165,7 @@ int MultiHist(char file[256], cv::Mat &hist_c, float center_break, cv::Mat &hist
     hist = cv::Mat::zeros(3, dim, CV_32F);
     hist_c = cv::Mat::zeros(3, dim, CV_32F);
 
-    for (int i = 0; i < image.rows; i++)
+    for (int i = 0; i < image.rows; i++)// calculating histogram 
     {
         cv::Vec3b *ptr = image.ptr<cv::Vec3b>(i);
         for (int j = 0; j < image.cols; j++)
@@ -193,7 +191,7 @@ int MultiHist(char file[256], cv::Mat &hist_c, float center_break, cv::Mat &hist
     return 0;
 }
 
-int sobelX3x3(cv::Mat &src, cv::Mat &dst)
+int sobelX3x3(cv::Mat &src, cv::Mat &dst) 
 {
 
     cv::Mat temp;
@@ -351,7 +349,7 @@ int sobelY3x3(cv::Mat &src, cv::Mat &dst)
     return 0;
 }
 
-int magnitude(cv::Mat &sx, cv::Mat &sy, cv::Mat &dst)
+int magnitude(cv::Mat &sx, cv::Mat &sy, cv::Mat &dst) // magnitude of 2 matrix
 {
 
     dst = cv::Mat::zeros(sx.size(), CV_8UC3);
@@ -406,7 +404,7 @@ int TextureColor(char file[256], cv::Mat &hist_c, cv::Mat &hist, int RGB, int bi
     hist = cv::Mat::zeros(3, dim, CV_32F);
     hist_c = cv::Mat::zeros(3, dim, CV_32F);
 
-    for (int i = 0; i < image.rows; i++)
+    for (int i = 0; i < image.rows; i++) // calculating color histogram
     {
         cv::Vec3b *ptr = image.ptr<cv::Vec3b>(i);
         cv::Vec3b *c_ptr = final_img.ptr<cv::Vec3b>(i);
@@ -424,7 +422,7 @@ int TextureColor(char file[256], cv::Mat &hist_c, cv::Mat &hist, int RGB, int bi
 }
 
 int Filter5x5(cv::Mat &src, cv::Mat &dst, int arr1[5], int arr2[5])
-{ // gaussian blur
+{ // convolution for laws filter
 
     cv::Mat temp;
     temp = cv::Mat::zeros(src.size(), src.type());
@@ -556,6 +554,7 @@ int LawsHist(char file[256], cv::Mat &hist_color, cv::Mat &hist, bool &first_run
 
     std::vector<float> vec_color(512);
 
+    // calculating color histogram
     int h = Histogram(file, hist_color, 0, 8);
     if (h == 0)
     {
@@ -568,13 +567,14 @@ int LawsHist(char file[256], cv::Mat &hist_color, cv::Mat &hist, bool &first_run
     else
     {
         vec_color_ret.assign(vec_color.begin(), vec_color.end());
-        append_image_data_csv((char *)"../csv/test2.csv", "testing", vec_color_ret, true);
+        //append_image_data_csv((char *)"../csv/test2.csv", "testing", vec_color_ret, true); //for debugging
     }
     if (first_run == true)
     {
         first_run = false;
     }
 
+    // calculating Laws filter output
     int Laws[5][5] = {{1, 4, 6, 4, 1}, {1, 2, 0, -2, -1}, {-1, 0, 2, 0, -1}, {1, -2, 0, 2, -1}, {1, -4, 6, -4, 1}};
     std::vector<float> vec(8);
     std::vector<float> vec_laws;
@@ -583,7 +583,7 @@ int LawsHist(char file[256], cv::Mat &hist_color, cv::Mat &hist, bool &first_run
     {
         for (int j = 0; j < 5; j++)
         {
-            Filter5x5(gray, gray_filtered, Laws[i], Laws[j]);
+            Filter5x5(gray, gray_filtered, Laws[i], Laws[j]); // laws filter in loop to find 25 combination 
             cv::convertScaleAbs(gray_filtered, filtered);
 
             int divisor = 256 / 8;
@@ -592,7 +592,7 @@ int LawsHist(char file[256], cv::Mat &hist_color, cv::Mat &hist, bool &first_run
 
            
 
-            for (int i = 0; i < filtered.rows; i++)
+            for (int i = 0; i < filtered.rows; i++) // calculating histogram of filter output
             {
                 uchar *ptr = filtered.ptr<uchar>(i);
                 int hist_g;
@@ -620,12 +620,12 @@ int LawsHist(char file[256], cv::Mat &hist_color, cv::Mat &hist, bool &first_run
     }
     if (write == true)
     {
-        append_image_data_csv((char *)"../csv/Landscape.csv", file, vec_laws, first_run);
+        append_image_data_csv((char *)"../csv/Landscape.csv", file, vec_laws, first_run); //adding to csv
     }
     else
     {
         vec_laws_ret.assign(vec_laws.begin(), vec_laws.end());
-        append_image_data_csv((char *)"../csv/test2.csv", "testing", vec_laws_ret, false);
+        //append_image_data_csv((char *)"../csv/test2.csv", "testing", vec_laws_ret, false); //for debugging
     }
     return 0;
 }

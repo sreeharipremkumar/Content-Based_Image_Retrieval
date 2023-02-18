@@ -1,3 +1,10 @@
+/*
+
+Sreehari Premkumar, MS Robotics Northeastern University
+
+The Main code that does Content Based Image Retreival
+*/
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -10,13 +17,13 @@
 #include "../include/csv_util.h"
 
 // bool output_full = false;
-struct Output
+struct Output //struct to store the results with image name and the distance metric
 {
     char *name;
     float sum;
 };
 
-float SSE(std::vector<float> &Ft, std::vector<float> &Fi)
+float SSE(std::vector<float> &Ft, std::vector<float> &Fi) // sum of squared errors distance metric
 {
     float sum = 0;
 
@@ -27,7 +34,7 @@ float SSE(std::vector<float> &Ft, std::vector<float> &Fi)
     return sum;
 }
 
-float Intersection(std::vector<float> &Ft, std::vector<float> &Fi)
+float Intersection(std::vector<float> &Ft, std::vector<float> &Fi) //Intersection of histogram distance metric
 {
     float sum = 0;
 
@@ -39,6 +46,14 @@ float Intersection(std::vector<float> &Ft, std::vector<float> &Fi)
     return sum;
 }
 
+
+/*
+
+    Function below is to iterate through the the target image feature vector and the csv data file having
+    different image feature vectors and calculate the difference using the distance metric, it will also check 
+    if weighted averaging is required, if yes then the value of the weights (multisum_ratio).
+    Function also requires the struct Output to store sorted and reversely sorted result
+*/
 int feature_iter(std::vector<float> &Ft,std::vector<float> &Ft2, std::vector<std::vector<float>> csv_data,
                  std::vector<char *> img_names, std::vector<Output> &sorted, int distance_type, bool multisum,
                  float multisum_ratio, std::vector<Output> &rev_sorted)
@@ -51,7 +66,7 @@ int feature_iter(std::vector<float> &Ft,std::vector<float> &Ft2, std::vector<std
         {
             sum = SSE(Ft, csv_data[i]);
 
-            for (int j = 0; j < num_out; j++)
+            for (int j = 0; j < num_out; j++) //sorting code for SSE to find best match 
             {
                 int flag1 = 0,flag2 =0;
                 if (sorted[j].sum >= sum)
@@ -64,7 +79,7 @@ int feature_iter(std::vector<float> &Ft,std::vector<float> &Ft2, std::vector<std
                     sorted[j].sum = sum;
                     flag1 = 1;
                 }
-                if(rev_sorted[j].sum<= sum)
+                if(rev_sorted[j].sum<= sum) // sorting to find worst match for SSE
                 {
                     for (int k = num_out-1;k>j;k--)
                     {
@@ -82,7 +97,7 @@ int feature_iter(std::vector<float> &Ft,std::vector<float> &Ft2, std::vector<std
         }
         else
         {
-            if (distance_type == 2)
+            if (distance_type == 2) // weighted sum of 2 Intersection
             {
                 sum = Intersection(Ft, csv_data[i]);
                 if (multisum == true)
@@ -92,7 +107,7 @@ int feature_iter(std::vector<float> &Ft,std::vector<float> &Ft2, std::vector<std
                     sum = multisum_ratio * sum + (1 - multisum_ratio) * sum2;
                 }
             }
-            else if(distance_type == 3)
+            else if(distance_type == 3) //weighted sum of Intersection and SSE
             {
                 sum = Intersection(Ft, csv_data[i]);
                 if (multisum == true)
@@ -103,7 +118,7 @@ int feature_iter(std::vector<float> &Ft,std::vector<float> &Ft2, std::vector<std
                 }
             }
         
-            for (int j = 0; j < num_out; j++)
+            for (int j = 0; j < num_out; j++) //finding best match 
             {
                 int flag1 = 0, flag2 =0;
                 if (sorted[j].sum <= sum)
@@ -117,7 +132,7 @@ int feature_iter(std::vector<float> &Ft,std::vector<float> &Ft2, std::vector<std
                     flag1 = 1;
                 }
 
-                if(rev_sorted[j].sum>= sum)
+                if(rev_sorted[j].sum>= sum) //finding worst match
                 {
                     for (int k = num_out-1;k>j;k--)
                     {
@@ -164,7 +179,7 @@ int main(int argc, char *argv[])
     std::vector<std::vector<float>> csv_data;
     int number_of_output = 5;
 
-    std::vector<Output> sorted(number_of_output);
+    std::vector<Output> sorted(number_of_output); //creating struct to store best and worst match name and distance metric result
     std::vector<Output> rev_sorted(number_of_output);
 
     if (num == 1)
@@ -173,7 +188,7 @@ int main(int argc, char *argv[])
         for (int i = 0; i < number_of_output; i++)
         {
             sorted[i].sum = std::numeric_limits<float>::infinity();
-            rev_sorted[i].sum = -std::numeric_limits<float>::infinity();
+            rev_sorted[i].sum = -std::numeric_limits<float>::infinity(); 
         }
         int h = Baseline(img_path, feature_vec);
         if (h == 0)
@@ -192,8 +207,8 @@ int main(int argc, char *argv[])
     if (num == 2)
     {
         int RGB = 0; // 0:RGB hist  1:RG hist 2:RB hist  3:Gb hist
-        int bin = 8;
-
+        int bin = 8; // can be changed when running code
+        // for storing different color hist in different files
         if (strcmp(argv[3], "../csv/Hist_RGB.csv") == 0)
         {
             RGB = 0;
@@ -242,11 +257,14 @@ int main(int argc, char *argv[])
     if (num == 3)
     {
         // Parameters
-        float center_square_break = 0.5;
+        float center_square_break = 0.5; // how much of the image should be taken for the 2nd image
+        //0.5 means 50% of original image box from center
+        //1.0 means whole image
 
         int RGB = 0;
         int bin = 8;
         float weight_distance = 0.5;
+        //Weights for averaging
 
         cv::Mat hist_c, hist;
         for (int i = 0; i < number_of_output; i++)
@@ -254,14 +272,14 @@ int main(int argc, char *argv[])
             sorted[i].sum = -std::numeric_limits<float>::infinity();
             rev_sorted[i].sum = std::numeric_limits<float>::infinity();
         }
-        int h = MultiHist(img_path, hist_c, center_square_break, hist, RGB, bin);
+        int h = MultiHist(img_path, hist_c, center_square_break, hist, RGB, bin); //calculating multihist for target image
 
         if (h == 0)
         {
             int t1 = Hist2Vec(feature_vec, hist, RGB);
             int t2 = Hist2Vec(feature_vec2, hist_c, RGB);
 
-            int r = read_image_data_csv(Multi_histo_path, img_names, csv_data, 0);
+            int r = read_image_data_csv(Multi_histo_path, img_names, csv_data, 0); // reading the previously extracted database
             if (r != 0)
             {
                 printf("Error when reading histogram csv");
@@ -269,6 +287,7 @@ int main(int argc, char *argv[])
             else
             {
                 int t = feature_iter(feature_vec,feature_vec2, csv_data, img_names, sorted, 2, true, weight_distance,rev_sorted);
+                // iterating throught the database comparing with the target image
             }
         }
     }
@@ -286,7 +305,7 @@ int main(int argc, char *argv[])
             sorted[i].sum = -std::numeric_limits<float>::infinity();
             rev_sorted[i].sum = std::numeric_limits<float>::infinity();
         }
-        int h = TextureColor(img_path, hist_c, hist, RGB, bin);
+        int h = TextureColor(img_path, hist_c, hist, RGB, bin); 
         if (h == 0)
         {
             int t1 = Hist2Vec(feature_vec, hist, RGB);
@@ -330,6 +349,8 @@ int main(int argc, char *argv[])
         }
     }
     cv::Mat image;
+
+    //printing output
     for (int i = 0; i < number_of_output; i++)
     {
         printf("Best Match (%d) = %s  (dist_metric_val = %f)\n",i+1, sorted[i].name, sorted[i].sum);
